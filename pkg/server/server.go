@@ -161,6 +161,13 @@ func New(config *Config) (*Server, error) {
 
 	err := serverConfig.AddPostStartHook("save loopback", func(context server.PostStartHookContext) error {
 		result.Loopback = context.LoopbackClientConfig
+		// Explicitly set ContentType to JSON to prevent client-go generated clients
+		// (like coordination/v1 Lease) from using protobuf, which kinm doesn't support.
+		// In client-go v0.35.0+, some clients have PrefersProtobuf and will switch to
+		// protobuf if ContentType is defaulted (contentTypeNotSet=true).
+		if result.Loopback != nil && result.Loopback.ContentType == "" {
+			result.Loopback.ContentType = "application/json"
+		}
 		close(result.started)
 		return nil
 	})
