@@ -113,6 +113,12 @@ func New(config *Config) (*Server, error) {
 
 	serverConfig := server.NewRecommendedConfig(*config.CodecFactory)
 	serverConfig.ClientConfig = generateDummyKubeconfig()
+	// Explicitly set ContentType to JSON for all REST clients to prevent protobuf usage.
+	// This ensures external clients (like controller-runtime's leader election) also use JSON.
+	// kinm doesn't support protobuf serialization, and client-go v0.35.0+ may default to protobuf.
+	if serverConfig.ClientConfig != nil {
+		serverConfig.ClientConfig.ContentType = "application/json"
+	}
 	serverConfig.OpenAPIConfig = server.DefaultOpenAPIConfig(config.OpenAPIConfig, openapi.NewDefinitionNamer(config.Scheme))
 	serverConfig.OpenAPIConfig.Info.Title = config.Name
 	serverConfig.OpenAPIConfig.Info.Version = config.Version
