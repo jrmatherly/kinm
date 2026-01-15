@@ -1,0 +1,206 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: "1.25"
+
+jobs:
+  # Go linting and code validation
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      - name: Set up Go
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Cache golangci-lint
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        with:
+          path: ~/.cache/golangci-lint
+          key: golangci-lint-${{ runner.os }}-${{ github.ref_name }}-${{ hashFiles('.golangci.yml', '.golangci.yaml') }}
+          restore-keys: |
+            golangci-lint-${{ runner.os }}-${{ github.ref_name }}-
+            golangci-lint-${{ runner.os }}-main-
+            golangci-lint-${{ runner.os }}-
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9.2.0
+        with:
+          version: latest
+          args: --timeout=5m
+
+      - name: Check formatting
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "The following files are not formatted correctly:"
+            gofmt -l .
+            exit 1
+          fi
+
+      - name: Run go vet
+        run: go vet ./...
+
+  # Unit tests with SQLite (fast, no external dependencies)
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      - name: Set up Go
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run unit tests
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: coverage
+          path: coverage.out
+          retention-days: 7
+
+  # Integration tests with PostgreSQL
+  integration-test:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: knowledge
+          POSTGRES_PASSWORD: knowledge
+          POSTGRES_DB: knowledge
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      - name: Set up Go
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run PostgreSQL integration tests
+        run: go test -v -race ./pkg/db/...
+        env:
+          KINM_TEST_DB: postgres
+          KINM_TEST_DSN: postgres://knowledge:knowledge@localhost:5432/knowledge?sslmode=disable
+
+  # Build verification
+  build:
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      - name: Set up Go
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Build
+        run: go build ./...
+
+  # Summary job for branch protection
+  summary:
+    name: CI Summary
+    if: always()
+    needs: [lint, test, integration-test, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check job results
+        run: |
+          echo "## CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          lint_result="${{ needs.lint.result }}"
+          test_result="${{ needs.test.result }}"
+          integration_result="${{ needs.integration-test.result }}"
+          build_result="${{ needs.build.result }}"
+
+          echo "| Job | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${lint_result} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test | ${test_result} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Test | ${integration_result} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${build_result} |" >> $GITHUB_STEP_SUMMARY
+
+          failed=false
+
+          if [[ "$lint_result" == "failure" ]]; then
+            echo "Lint job failed"
+            failed=true
+          fi
+
+          if [[ "$test_result" == "failure" ]]; then
+            echo "Test job failed"
+            failed=true
+          fi
+
+          if [[ "$integration_result" == "failure" ]]; then
+            echo "Integration test job failed"
+            failed=true
+          fi
+
+          if [[ "$build_result" == "failure" ]]; then
+            echo "Build job failed"
+            failed=true
+          fi
+
+          if [[ "$failed" == "true" ]]; then
+            echo ""
+            echo "One or more jobs failed. See details above."
+            exit 1
+          fi
+
+          echo ""
+          echo "All jobs completed successfully (or were skipped as expected)."

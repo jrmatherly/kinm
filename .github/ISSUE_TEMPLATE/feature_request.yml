@@ -1,0 +1,116 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for kinm
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature!
+        Please provide as much detail as possible to help us understand your request.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: Is your feature request related to a problem? Please describe.
+      placeholder: I'm always frustrated when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like
+      placeholder: I would like...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions or features you've considered
+      placeholder: I also considered...
+
+  - type: textarea
+    id: api
+    attributes:
+      label: Proposed API
+      description: If applicable, suggest what the API might look like
+      render: go
+      placeholder: |
+        // Example API design
+        type NewFeature struct {
+            // ...
+        }
+
+        func (db *DB) NewMethod(ctx context.Context) error {
+            // ...
+        }
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Feature Scope
+      description: What area of kinm does this feature relate to?
+      options:
+        - Database operations
+        - API server
+        - Strategy/storage
+        - Authentication
+        - OpenTelemetry/Tracing
+        - Testing utilities
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Breaking Change
+      description: Would this feature require breaking changes?
+      options:
+        - "No"
+        - "Yes - minor breaking change"
+        - "Yes - major breaking change"
+        - "Unsure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: Describe a real-world use case where this feature would be valuable
+      placeholder: This feature would help when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, screenshots, or examples about the feature request
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Are you willing to contribute to implementing this feature?
+      options:
+        - label: I am willing to submit a PR to implement this feature
+        - label: I am willing to help test this feature
+
+  - type: checkboxes
+    id: search
+    attributes:
+      label: Search Confirmation
+      description: Please confirm you have searched for existing issues
+      options:
+        - label: I have searched the existing issues and this feature has not been requested
+          required: true

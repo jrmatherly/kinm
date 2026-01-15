@@ -1,0 +1,31 @@
+# CODEOWNERS for kinm
+# These owners will be requested for review when someone opens a PR
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything
+* @jrmatherly
+
+# Core database layer (security-sensitive)
+/pkg/db/ @jrmatherly
+
+# SQL statements (critical for SQL injection prevention)
+/pkg/db/statements/ @jrmatherly
+
+# API server and strategy implementations
+/pkg/server/ @jrmatherly
+/pkg/strategy/ @jrmatherly
+
+# Store implementations
+/pkg/stores/ @jrmatherly
+
+# Dependency management (security-sensitive)
+/go.mod @jrmatherly
+/go.sum @jrmatherly
+
+# CI/CD workflows
+/.github/ @jrmatherly
+
+# Documentation
+/docs/ @jrmatherly
+/README.md @jrmatherly
+/SECURITY.md @jrmatherly
