@@ -37,7 +37,7 @@ func NewNotFound(gvk schema.GroupVersionKind, name string) error {
 		}, name)
 }
 
-func NewCompactionError(requested, current uint) error {
+func NewCompactionError(requested, current int64) error {
 	return apierrors.NewResourceExpired(fmt.Sprintf("resource version %d before current compaction %d", requested, current))
 }
 

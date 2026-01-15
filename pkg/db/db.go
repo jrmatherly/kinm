@@ -224,7 +224,7 @@ func (d *db) list(ctx context.Context, namespace, name *string, rev int64, after
 	// is important for when the compaction ID is greater than any existing ID in the table. That can happen
 	// after a compaction where the last row was a delete=true row.
 	if rev != 0 && meta.ListID != 0 && meta.ListID < meta.CompactionID {
-		return meta, nil, errors.NewCompactionError(uint(meta.ListID), uint(meta.CompactionID))
+		return meta, nil, errors.NewCompactionError(meta.ListID, meta.CompactionID)
 	}
 
 	return meta, records, tx.Commit()
