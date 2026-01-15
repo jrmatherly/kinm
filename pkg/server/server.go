@@ -163,7 +163,6 @@ func New(config *Config) (*Server, error) {
 		result.Loopback = context.LoopbackClientConfig
 		close(result.started)
 		return nil
-
 	})
 	if err != nil {
 		return nil, err

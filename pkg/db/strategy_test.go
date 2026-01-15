@@ -395,5 +395,4 @@ func TestContinue(t *testing.T) {
 	assert.Equal(t, "3", list.Items[1].ResourceVersion)
 	assert.Equal(t, "testname3", list.Items[1].Name)
 	assert.Equal(t, "", list.Continue)
-
 }

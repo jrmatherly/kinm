@@ -8,9 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"k8s.io/apiserver/pkg/endpoints/request"
 	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 )
@@ -128,7 +126,7 @@ func (a *UpdateAdapter) update(ctx context.Context, status bool, name string, ob
 		if objectMeta, err := meta.Accessor(obj); err == nil {
 			rest.FillObjectMetaSystemFields(objectMeta)
 			if objectMeta.GetName() == "" {
-				requestInfo, ok := request.RequestInfoFrom(ctx)
+				requestInfo, ok := genericapirequest.RequestInfoFrom(ctx)
 				if ok && requestInfo.Name != "" {
 					objectMeta.SetName(requestInfo.Name)
 				}
@@ -177,11 +175,4 @@ func (a *UpdateAdapter) update(ctx context.Context, status bool, name string, ob
 
 	newObj, err := a.strategy.(Updater).Update(ctx, obj.(types.Object))
 	return newObj, false, err
-}
-
-func (a *UpdateAdapter) qualifiedResourceFromContext(ctx context.Context) schema.GroupResource {
-	if info, ok := genericapirequest.RequestInfoFrom(ctx); ok {
-		return schema.GroupResource{Group: info.APIGroup, Resource: info.Resource}
-	}
-	return schema.GroupResource{}
 }

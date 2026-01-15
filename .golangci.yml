@@ -12,6 +12,33 @@ linters:
     - thelper
     - unused
     - whitespace
+  settings:
+    revive:
+      # Disable rules that trigger false positives on upstream code patterns
+      rules:
+        # Disable unused-parameter - often required for interface compliance
+        - name: unused-parameter
+          disabled: true
+        # Disable receiver-naming - upstream has inconsistent naming
+        - name: receiver-naming
+          disabled: true
+        # Disable blank-imports - legitimate use for embed package
+        - name: blank-imports
+          disabled: true
+        # Disable var-naming for package names - upstream uses "errors" and "types"
+        - name: var-naming
+          disabled: true
+        # Disable empty-block - intentional channel drain patterns
+        - name: empty-block
+          disabled: true
+    staticcheck:
+      checks:
+        - all
+        # Disable style suggestions that are preferences, not bugs
+        - "-QF1001"  # De Morgan's law suggestions
+        - "-QF1008"  # Remove embedded field from selector
+        - "-ST1016"  # Inconsistent receiver names (upstream pattern)
+        - "-ST1019"  # Duplicate imports (upstream pattern)
   exclusions:
     generated: lax
     presets:
