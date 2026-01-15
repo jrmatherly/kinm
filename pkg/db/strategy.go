@@ -426,7 +426,9 @@ func (s *Strategy) streamWatch(ctx context.Context, namespace string, opts stora
 
 	var bookmarks <-chan time.Time
 	if opts.ProgressNotify {
-		ticker := time.NewTicker(time.Minute)
+		// Generate bookmarks every 5 seconds to satisfy client-go v0.35.0's 10-second timeout
+		// client-go expects bookmarks more frequently than our previous 1-minute interval
+		ticker := time.NewTicker(5 * time.Second)
 		defer ticker.Stop()
 		bookmarks = ticker.C
 	}
