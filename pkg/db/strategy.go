@@ -464,7 +464,11 @@ func (s *Strategy) streamWatch(ctx context.Context, namespace string, opts stora
 			case <-ctx.Done():
 				return
 			case <-bookmarks:
-				ch <- watch.Event{Type: watch.Bookmark, Object: nil}
+				// Create a proper object for the bookmark event - k8s apiserver encoder requires
+				// a valid object, not nil. Set the ResourceVersion so clients can track progress.
+				bookmarkObj := s.New()
+				bookmarkObj.SetResourceVersion(opts.ResourceVersion)
+				ch <- watch.Event{Type: watch.Bookmark, Object: bookmarkObj}
 			case <-s.waitChange():
 			case <-time.After(2 * time.Second):
 			}
