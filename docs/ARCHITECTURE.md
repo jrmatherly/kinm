@@ -71,11 +71,13 @@ Kinm is a database-backed API server providing Kubernetes-like CRUD+Watch semant
 Unlike Kubernetes (etcd) or Kine/Mink (in-memory cache), Kinm keeps **all state in the database**.
 
 **Benefits:**
+
 - No memory pressure from large resource counts
 - Stateless API servers (horizontal scaling)
 - Database handles durability and consistency
 
 **Trade-offs:**
+
 - Higher database load
 - Watch requires polling mechanism
 
@@ -92,6 +94,7 @@ Each record has a `previous_id` forming a version chain:
 ```
 
 **Purpose:**
+
 - Enables Watch by scanning `id > lastSeen`
 - Provides optimistic concurrency via `previous_id`
 - Supports conflict detection
@@ -107,6 +110,7 @@ Background process removes old versions:
 ```
 
 **Process:**
+
 - Runs every 15 minutes per table
 - Updates `compaction.id` watermark
 - Clients with old `resourceVersion` get `410 Gone`
@@ -134,6 +138,7 @@ for {
 ```
 
 **Flow:**
+
 1. Client connects with `resourceVersion`
 2. Server queries for records with `id > resourceVersion`
 3. Returns events or waits for broadcast
@@ -158,6 +163,7 @@ AND rn = 1 AND deleted = 0;
 ```
 
 **Implementation:**
+
 - Types implement `FieldNames()` interface
 - Migration adds columns automatically
 - Queries filter on indexed fields
@@ -165,17 +171,20 @@ AND rn = 1 AND deleted = 0;
 ## Package Responsibilities
 
 ### pkg/server
+
 - HTTP server wrapping k8s genericapiserver
 - TLS/authentication/authorization
 - Middleware chain
 - OpenAPI generation
 
 ### pkg/stores
+
 - Pre-configured store combinations
 - Builder pattern for custom stores
 - Maps store variants to strategy adapters
 
 ### pkg/strategy
+
 - Adapters between k8s apiserver and Kinm
 - Validation hooks
 - Namespace scoping
@@ -183,6 +192,7 @@ AND rn = 1 AND deleted = 0;
 - OpenTelemetry tracing
 
 ### pkg/db
+
 - Database connection management
 - SQL execution with GORM
 - Strategy implementation
@@ -190,24 +200,29 @@ AND rn = 1 AND deleted = 0;
 - Watch broadcast coordination
 
 ### pkg/db/statements
+
 - Embedded SQL files
 - Template substitution (table names, field columns)
 - PostgreSQL/SQLite compatibility
 
 ### pkg/types
+
 - Base `Object` and `ObjectList` interfaces
 - Field selection interfaces
 - Attribute extraction for filtering
 
 ### pkg/apigroup
+
 - API group registration helpers
 - Scheme management
 
 ### pkg/authn
+
 - Static token authentication
 - Bearer token extraction
 
 ### pkg/otel
+
 - OpenTelemetry attribute helpers
 - Trace span attributes for operations
 
@@ -274,16 +289,19 @@ ListAdapter.List()
 ## Scalability Considerations
 
 ### Horizontal Scaling
+
 - API servers are stateless
 - Database handles coordination
 - Watch broadcast is per-process (no cross-server coordination)
 
 ### Database Performance
+
 - Connection pooling (configurable)
 - Index on (name, namespace, created)
 - Compaction prevents unbounded growth
 
 ### Watch Efficiency
+
 - Broadcast channel avoids polling
 - Clients share same broadcast notification
 - Query only changed records
@@ -291,16 +309,19 @@ ListAdapter.List()
 ## Security Model
 
 ### Authentication
+
 - Pluggable authenticator interface
 - Static token for simple deployments
 - Anonymous fallback available
 
 ### Authorization
+
 - Pluggable authorizer interface
 - Per-request authorization
 - Integrates with k8s RBAC concepts
 
 ### Input Validation
+
 - Name validation (DNS subdomain by default)
 - Namespace scoping enforcement
 - Custom validators via hooks

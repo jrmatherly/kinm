@@ -36,37 +36,48 @@ kinm/
 ## Core Modules
 
 ### pkg/db - Database Layer
+
 **Purpose:** PostgreSQL/SQLite storage with versioned records
+
 - `Factory` - Creates DB connections and strategies
 - `Strategy` - Implements Create/Get/Update/Delete/List/Watch
 - `statements/` - 13 embedded SQL files for all operations
 
 **Key Types:**
+
 - `Factory{DB, SQLDB, schema, migrationTimeout}`
 - `Strategy{db, objTemplate, broadcast...}`
 
 ### pkg/server - API Server
+
 **Purpose:** HTTP server wrapping k8s genericapiserver
+
 - `Server{Config, GenericAPIServer, Loopback}`
 - `Config{Name, Authenticator, Authorization, HTTPListenPort...}`
 
 **Entry Points:**
+
 - `New(config *Config)` - Create server
 - `(*Server).Run(ctx)` - Start HTTP server
 - `(*Server).Handler(ctx)` - Get HTTP handler
 
 ### pkg/stores - Store Builders
+
 **Purpose:** Pre-built store configurations via builder pattern
+
 - `Builder` - Fluent interface for store construction
 - 15+ store variants: `complete`, `createget`, `getlist`, `readwritewatch`, etc.
 
 **Key Methods:**
+
 - `NewBuilder(scheme, obj)` - Start building
 - `WithCompleteCRUD()`, `WithWatch()`, `WithGet()`, `WithList()`...
 - `Build()` - Produce final store
 
 ### pkg/strategy - CRUD Strategies
+
 **Purpose:** Implements k8s apiserver storage interfaces
+
 - `Base` - Interface combining Storage, Scoper, TableConvertor
 - `CompleteStrategy` - Full CRUD+Watch interface
 - `Watcher` - Watch interface for streaming changes
@@ -74,21 +85,25 @@ kinm/
 **Operations:** create, get, list, update, delete, watch, destroy
 
 ### pkg/types - Core Types
+
 - `Object` - Base object with TypeMeta, ObjectMeta, Spec, Status
 - `ObjectList` - List container
 - `NamespaceScoper` - Interface for namespace scoping
 
 ### pkg/apigroup - API Registration
+
 - `AddToScheme(scheme)` - Register types
 - `ForStores(scheme, stores)` - Create API group from stores
 
 ### pkg/authn - Authentication
+
 - `StaticToken` - Static bearer token authenticator
 - `GetBearerToken(req)` - Extract token from request
 
 ## Database Schema
 
 **Main Table (per resource type):**
+
 ```sql
 CREATE TABLE {name} (
     id          INTEGER PRIMARY KEY,
@@ -104,6 +119,7 @@ CREATE TABLE {name} (
 ```
 
 **Compaction Table:**
+
 ```sql
 CREATE TABLE compaction (
     name VARCHAR(255) UNIQUE,
@@ -130,6 +146,7 @@ CREATE TABLE compaction (
 | pkg/db | `db_test.go`, `strategy_test.go` |
 
 **Test Commands:**
+
 ```bash
 go test ./...                              # All tests (SQLite)
 KINM_TEST_DB=postgres go test ./pkg/db/... # PostgreSQL tests
