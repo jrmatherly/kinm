@@ -45,6 +45,7 @@ We follow coordinated disclosure practices:
 Security issues that impact the confidentiality, integrity, or availability of this library or downstream projects using it are in scope.
 
 **In scope:**
+
 - SQL injection vulnerabilities in database operations
 - Panics or crashes in library code that can be triggered by user input
 - Resource leaks (goroutine leaks, memory leaks, database connection leaks)
@@ -53,6 +54,7 @@ Security issues that impact the confidentiality, integrity, or availability of t
 - Vulnerabilities in dependencies that affect kinm's functionality
 
 **Out of scope (non-exhaustive):**
+
 - Vulnerabilities requiring privileged database access without a clear escalation path
 - Issues in user-implemented application logic (not in kinm library itself)
 - Vulnerabilities in third-party dependencies not owned by this project (please report upstream)
@@ -63,6 +65,7 @@ Security issues that impact the confidentiality, integrity, or availability of t
 We will not pursue legal action against security researchers conducting good-faith research aligned with this policy.
 
 Please avoid:
+
 - Privacy violations
 - Service degradation or denial of service
 - Data destruction or corruption
@@ -73,6 +76,7 @@ Only test against your own databases and data.
 ## Receiving Security Fixes
 
 Security fixes are shipped in patch releases. We recommend:
+
 - Always use the latest patch version of the library
 - Monitor release notes for security advisories
 - Enable GitHub notifications for this repository
@@ -97,16 +101,19 @@ This project follows security best practices including:
 kinm is a database-backed API server. Implementations using kinm should follow these security principles:
 
 #### SQL Injection Prevention
+
 - All SQL statements use parameterized queries
 - No string concatenation for SQL construction
 - Input validation before database operations
 
 #### Connection Security
+
 - Support for TLS/SSL database connections
 - Connection string secrets should be stored securely
 - Connection pooling with proper cleanup
 
 #### Resource Management
+
 - Bounded connection pools
 - Proper cleanup of database resources
 - Leak-free query execution
@@ -114,11 +121,13 @@ kinm is a database-backed API server. Implementations using kinm should follow t
 ### API Server Security
 
 #### Authentication & Authorization
+
 - Integration with Kubernetes API server authentication
 - Proper RBAC support when deployed in-cluster
 - No elevation of privileges without explicit configuration
 
 #### Input Validation
+
 - Validate all Kubernetes resource inputs
 - Sanitize data before storage
 - Use typed APIs where possible
@@ -126,6 +135,7 @@ kinm is a database-backed API server. Implementations using kinm should follow t
 ### Breaking Changes and API Stability
 
 Security through API stability:
+
 - Breaking changes are documented in release notes
 - Major version bumps for breaking changes
 - Deprecation notices before removal
@@ -136,6 +146,7 @@ This helps downstream users maintain secure configurations during upgrades.
 ## Dependency Security
 
 kinm depends on:
+
 - k8s.io/apiserver (Kubernetes API server framework)
 - k8s.io/apimachinery (Kubernetes types and utilities)
 - gorm.io/gorm (ORM for database operations)
@@ -143,6 +154,7 @@ kinm depends on:
 - OpenTelemetry (distributed tracing)
 
 We monitor these dependencies for vulnerabilities using:
+
 - Renovate automated scanning
 - GitHub Dependabot alerts
 - Manual security review of dependency updates

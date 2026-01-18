@@ -60,7 +60,7 @@ body:
         // Minimal reproduction code
         package main
 
-        import "github.com/obot-platform/kinm/pkg/db"
+        import "github.com/jrmatherly/kinm/pkg/db"
 
         func main() {
             // ...

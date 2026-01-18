@@ -1,0 +1,68 @@
+#:schema https://mise.jdx.dev/schema/mise.json
+# kinm - K8s-like API Server with PostgreSQL
+# Inherits: go, golangci-lint from root
+#
+# Usage:
+#   mise :test           - Run unit tests
+#   mise :test-integration - Run integration tests (requires PostgreSQL)
+#   mise :build          - Build binary
+#   mise :ci             - Full CI pipeline
+
+[env]
+PROJECT_NAME = "kinm"
+
+[tasks.build]
+description = "Build binary"
+run = "go build -o bin/kinm ./..."
+sources = ["**/*.go", "go.mod", "go.sum"]
+outputs = ["bin/kinm"]
+
+[tasks.test]
+description = "Run unit tests"
+run = "go test ./..."
+
+[tasks.test-race]
+description = "Run tests with race detector"
+run = "go test -race ./..."
+
+[tasks.test-cover]
+description = "Run tests with coverage"
+run = "go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out -o coverage.html"
+outputs = ["coverage.out", "coverage.html"]
+
+[tasks.test-integration]
+description = "Run integration tests (requires PostgreSQL)"
+run = "go test -tags=integration ./..."
+
+[tasks.lint]
+alias = "validate"
+description = "Run linters"
+run = "golangci-lint run"
+
+[tasks.tidy]
+description = "Tidy modules"
+run = "go mod tidy"
+
+[tasks.fmt]
+description = "Format code"
+run = "go fmt ./..."
+
+[tasks.vet]
+description = "Run go vet"
+run = "go vet ./..."
+
+[tasks.validate-ci]
+description = "CI validation"
+run = """
+go mod tidy
+go fmt ./...
+golangci-lint run
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+    echo "Dirty repo!"
+    exit 1
+fi
+"""
+
+[tasks.ci]
+description = "Full CI pipeline"
+depends = ["validate-ci", "test"]

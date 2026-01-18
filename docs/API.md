@@ -11,6 +11,7 @@ Kinm provides a Kubernetes-like API for CRUD operations with Watch support. This
 Located in `pkg/strategy/`, these interfaces define the contract for storage operations.
 
 #### CompleteStrategy
+
 ```go
 // pkg/strategy/all.go
 type CompleteStrategy interface {
@@ -29,6 +30,7 @@ type CompleteStrategy interface {
 Full-featured strategy implementing all CRUD+Watch operations.
 
 #### Creater
+
 ```go
 // pkg/strategy/create.go
 type Creater interface {
@@ -38,6 +40,7 @@ type Creater interface {
 ```
 
 #### Getter
+
 ```go
 // pkg/strategy/get.go
 type Getter interface {
@@ -46,6 +49,7 @@ type Getter interface {
 ```
 
 #### Lister
+
 ```go
 // pkg/strategy/list.go
 type Lister interface {
@@ -56,6 +60,7 @@ type Lister interface {
 ```
 
 #### Updater
+
 ```go
 // pkg/strategy/update.go
 type Updater interface {
@@ -66,6 +71,7 @@ type Updater interface {
 ```
 
 #### Deleter
+
 ```go
 // pkg/strategy/delete.go
 type Deleter interface {
@@ -74,6 +80,7 @@ type Deleter interface {
 ```
 
 #### Watcher
+
 ```go
 // pkg/strategy/watch.go
 type Watcher interface {
@@ -99,6 +106,7 @@ func NewFactory(schema *runtime.Scheme, dsn string) (*Factory, error)
 ```
 
 **Factory Methods:**
+
 - `Scheme() *runtime.Scheme` - Returns the registered scheme
 - `Name() string` - Returns "kinm"
 - `Check() error` - Performs database health check
@@ -120,6 +128,7 @@ func New(
 ```
 
 **Strategy implements:**
+
 - `Create(ctx, obj) (types.Object, error)`
 - `Get(ctx, namespace, name) (types.Object, error)`
 - `List(ctx, namespace, opts) (types.ObjectList, error)`

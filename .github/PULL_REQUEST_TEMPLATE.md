@@ -171,6 +171,7 @@ Relates to #
 - [ ] Changes touch shared upstream code (may conflict with future syncs)
 
 **If shared code changed:**
+
 - Conflict resolution strategy: <!-- describe how to handle future upstream conflicts -->
 
 ## Additional Context
