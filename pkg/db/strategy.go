@@ -425,9 +425,10 @@ func (s *Strategy) streamWatch(ctx context.Context, namespace string, opts stora
 	defer close(ch)
 
 	var bookmarks <-chan time.Time
-	if opts.ProgressNotify {
+	if opts.ProgressNotify || opts.Predicate.AllowWatchBookmarks {
 		// Generate bookmarks every 5 seconds to satisfy client-go v0.35.0's 10-second timeout
 		// client-go expects bookmarks more frequently than our previous 1-minute interval
+		// Check both ProgressNotify (used by storage layer) and AllowWatchBookmarks (used by k8s apiserver)
 		ticker := time.NewTicker(5 * time.Second)
 		defer ticker.Stop()
 		bookmarks = ticker.C
