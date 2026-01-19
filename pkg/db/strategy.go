@@ -349,6 +349,11 @@ func (s *Strategy) Delete(ctx context.Context, obj types.Object) (types.Object, 
 }
 
 func (s *Strategy) Watch(ctx context.Context, namespace string, opts storage.ListOptions) (<-chan watch.Event, error) {
+	// Capture the original ResourceVersion BEFORE any modifications.
+	// This is critical for determining if we need to send the initial-events-end bookmark.
+	// An empty or "0" RV indicates an initial sync request from controller-runtime.
+	originalRV := opts.ResourceVersion
+
 	ctx, span := tracer.Start(ctx, "dbStrategyWatch", trace.WithAttributes(kotel.ListOptionsToAttributes(opts, attribute.String("gvk", s.db.gvk.String()), attribute.String("namespace", namespace))...))
 	defer span.End()
 
@@ -378,7 +383,7 @@ func (s *Strategy) Watch(ctx context.Context, namespace string, opts storage.Lis
 	opts.ResourceVersion = resourceVersion
 
 	ch := make(chan watch.Event)
-	go s.streamWatch(ctx, namespace, opts, lister, ch)
+	go s.streamWatch(ctx, namespace, opts, lister, originalRV, ch)
 	return ch, nil
 }
 
@@ -421,7 +426,43 @@ func (s *Strategy) waitChange() <-chan struct{} {
 	return s.broadcast
 }
 
-func (s *Strategy) streamWatch(ctx context.Context, namespace string, opts storage.ListOptions, lister iter.Seq2[record, error], ch chan watch.Event) {
+// isInitialEventsEndBookmarkRequired returns true if we need to send the special
+// initial-events-end bookmark after streaming initial events. This is required by
+// client-go v0.35.0+ for the watch-list pattern to work correctly.
+// See: https://github.com/kubernetes/kubernetes/issues/120348
+//
+// The function detects watch-list pattern in two ways:
+//  1. Explicit: SendInitialEvents is explicitly set to true (direct API call)
+//  2. Inferred: SendInitialEvents is nil but AllowWatchBookmarks is true and
+//     the original ResourceVersion (before modification) is empty/"0"
+//     (indicates initial sync from controller-runtime)
+//
+// The inferred case handles controller-runtime/nah which doesn't propagate
+// SendInitialEvents through all layers but still expects the initial-events-end bookmark.
+//
+// IMPORTANT: originalRV must be the ResourceVersion from the original Watch request,
+// BEFORE any modification by prepareList or newLister. This is critical because
+// by the time streamWatch is called, opts.ResourceVersion has been set to the
+// current database version.
+func isInitialEventsEndBookmarkRequired(opts storage.ListOptions, originalRV string) bool {
+	// Case 1: Explicit SendInitialEvents=true (standard watch-list API)
+	if opts.SendInitialEvents != nil && *opts.SendInitialEvents && opts.Predicate.AllowWatchBookmarks {
+		return true
+	}
+
+	// Case 2: Inferred watch-list pattern - AllowWatchBookmarks=true with empty original RV
+	// This handles controller-runtime which expects the bookmark but doesn't set SendInitialEvents.
+	// Empty ResourceVersion or "0" indicates an initial list/watch, not a resume from a specific version.
+	if opts.SendInitialEvents == nil && opts.Predicate.AllowWatchBookmarks {
+		if originalRV == "" || originalRV == "0" {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (s *Strategy) streamWatch(ctx context.Context, namespace string, opts storage.ListOptions, lister iter.Seq2[record, error], originalRV string, ch chan watch.Event) {
 	defer close(ch)
 
 	var bookmarks <-chan time.Time
@@ -433,6 +474,10 @@ func (s *Strategy) streamWatch(ctx context.Context, namespace string, opts stora
 		defer ticker.Stop()
 		bookmarks = ticker.C
 	}
+
+	// Track whether we need to send the initial-events-end bookmark after the first iteration.
+	// We use the originalRV (from before any modification) to determine if this is an initial sync.
+	needsInitialEventsEndBookmark := isInitialEventsEndBookmarkRequired(opts, originalRV)
 
 	for {
 		for rec, err := range lister {
@@ -446,6 +491,20 @@ func (s *Strategy) streamWatch(ctx context.Context, namespace string, opts stora
 			} else if ok {
 				ch <- event
 			}
+		}
+
+		// After streaming initial events, send the initial-events-end bookmark if required.
+		// This tells client-go v0.35.0+ that all initial events have been sent and it can
+		// call Replace() on the store, which triggers HasSynced() to return true.
+		if needsInitialEventsEndBookmark {
+			bookmarkObj := s.New()
+			bookmarkObj.SetResourceVersion(opts.ResourceVersion)
+			// Set the annotation that marks this as the initial-events-end bookmark
+			bookmarkObj.SetAnnotations(map[string]string{
+				metav1.InitialEventsAnnotationKey: "true",
+			})
+			ch <- watch.Event{Type: watch.Bookmark, Object: bookmarkObj}
+			needsInitialEventsEndBookmark = false // Only send once
 		}
 
 		var (
@@ -464,7 +523,11 @@ func (s *Strategy) streamWatch(ctx context.Context, namespace string, opts stora
 			case <-ctx.Done():
 				return
 			case <-bookmarks:
-				ch <- watch.Event{Type: watch.Bookmark, Object: nil}
+				// Create a proper object for the bookmark event - k8s apiserver encoder requires
+				// a valid object, not nil. Set the ResourceVersion so clients can track progress.
+				bookmarkObj := s.New()
+				bookmarkObj.SetResourceVersion(opts.ResourceVersion)
+				ch <- watch.Event{Type: watch.Bookmark, Object: bookmarkObj}
 			case <-s.waitChange():
 			case <-time.After(2 * time.Second):
 			}
