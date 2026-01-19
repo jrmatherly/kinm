@@ -234,6 +234,25 @@ KINM_TEST_DB=postgres go test ./pkg/db/...
 - Compaction prevents unbounded table growth
 - Field indexing for efficient field selectors
 
+## Fork Repository Notes
+
+This is a fork of `obot-platform/kinm`. When using GitHub CLI (`gh`), always specify the repo explicitly:
+
+```bash
+# Creating releases
+gh release create v0.x.x --repo jrmatherly/kinm --title "..."
+
+# Viewing releases
+gh release list --repo jrmatherly/kinm
+
+# Creating PRs
+gh pr create --repo jrmatherly/kinm
+```
+
+The git remotes are configured as:
+- `origin` → `jrmatherly/kinm` (fork)
+- `upstream` → `obot-platform/kinm` (original)
+
 ## Workspace Integration
 
 This project is part of the AI workspace. Additional resources:
@@ -275,3 +294,24 @@ For session initialization with full context, run `/expert-mode` from the worksp
 2. Verify compaction isn't removing needed records
 3. Check broadcast channel for notification delivery
 4. Enable GORM logging for SQL debugging
+
+## K8s v0.35.0+ Compatibility
+
+### Initial-Events-End Bookmark (CRITICAL)
+
+client-go v0.35.0 introduced the **watch-list pattern** which requires kinm to send a special `initial-events-end` bookmark after streaming all initial events. Without this bookmark, `WaitForCacheSync` blocks forever.
+
+**Implementation** (`pkg/db/strategy.go`):
+
+1. Capture original `ResourceVersion` before modifications
+2. Detect initial sync via `isInitialEventsEndBookmarkRequired()`
+3. Send bookmark with `metav1.InitialEventsAnnotationKey: "true"` annotation
+
+**Detection logic** - send bookmark when:
+
+- `SendInitialEvents=true` (explicit), OR
+- `AllowWatchBookmarks=true` AND original `ResourceVersion=""` or `"0"` (inferred)
+
+The inferred case handles controller-runtime/nah which doesn't propagate `SendInitialEvents`.
+
+**Reference**: https://github.com/kubernetes/kubernetes/issues/120348
