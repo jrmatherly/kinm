@@ -432,10 +432,10 @@ func (s *Strategy) waitChange() <-chan struct{} {
 // See: https://github.com/kubernetes/kubernetes/issues/120348
 //
 // The function detects watch-list pattern in two ways:
-// 1. Explicit: SendInitialEvents is explicitly set to true (direct API call)
-// 2. Inferred: SendInitialEvents is nil but AllowWatchBookmarks is true and
-//    the original ResourceVersion (before modification) is empty/"0"
-//    (indicates initial sync from controller-runtime)
+//  1. Explicit: SendInitialEvents is explicitly set to true (direct API call)
+//  2. Inferred: SendInitialEvents is nil but AllowWatchBookmarks is true and
+//     the original ResourceVersion (before modification) is empty/"0"
+//     (indicates initial sync from controller-runtime)
 //
 // The inferred case handles controller-runtime/nah which doesn't propagate
 // SendInitialEvents through all layers but still expects the initial-events-end bookmark.
