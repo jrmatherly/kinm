@@ -234,6 +234,25 @@ KINM_TEST_DB=postgres go test ./pkg/db/...
 - Compaction prevents unbounded table growth
 - Field indexing for efficient field selectors
 
+## Fork Repository Notes
+
+This is a fork of `obot-platform/kinm`. When using GitHub CLI (`gh`), always specify the repo explicitly:
+
+```bash
+# Creating releases
+gh release create v0.x.x --repo jrmatherly/kinm --title "..."
+
+# Viewing releases
+gh release list --repo jrmatherly/kinm
+
+# Creating PRs
+gh pr create --repo jrmatherly/kinm
+```
+
+The git remotes are configured as:
+- `origin` → `jrmatherly/kinm` (fork)
+- `upstream` → `obot-platform/kinm` (original)
+
 ## Workspace Integration
 
 This project is part of the AI workspace. Additional resources:
