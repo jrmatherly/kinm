@@ -1,17 +1,180 @@
-# Kinm is not Mink
+# Kinm
 
-Kinm (pronounced "kim", like the name)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Go Version](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go)](https://go.dev/)
 
-Mink (Mink is not Kubernetes), a Kubernetes Aggregated API Server backed by a database, was a hasty rewrite of Kine that instead of
-doing an ETCD shim to support an RDBMS, it was a Kubernetes Aggregated API Server that could be backed by an RDBMS.
-The idea was great, but the implementation was poor and ultimately the project was archived when Acorn Labs pivoted away
-from creating a Kubernetes product.
+**A Kubernetes-like API server backed by PostgreSQL/SQLite**
 
-Kinm is a new project that continues with the learnings of Mink but no longer focused on pure Kubernetes environments.
-Compatibility with Kubernetes is not a goal, but happens to work right now. Instead Kinm is focused on providing a
-an efficient and scalable API server that can do basically what k8s API does (CRUD operations on resources with Watch).
-We will most likely fork away from a lot of the core k8s libraries because they bring in too much bloat and change too
-often.
+> 📖 **Documentation:** [API Reference](docs/API.md) • [Architecture](docs/ARCHITECTURE.md)
 
-Kinm also heavily focuses on an efficient Postgres backend trying to fully embrace SQL and keep all state in the database
-and not in memory as Kine and Mink do.
+---
+
+## What is Kinm?
+
+Kinm (pronounced "kim", like the name) is a database-backed API server providing Kubernetes-like CRUD+Watch semantics without the complexity of etcd. It enables building scalable, resource-oriented APIs with familiar K8s patterns while keeping all state in PostgreSQL or SQLite.
+
+### Origin Story
+
+Kinm continues the learnings from **Mink** (Mink is not Kubernetes), a Kubernetes Aggregated API Server backed by a database. While Mink was archived when Acorn Labs pivoted away from Kubernetes products, the core idea remained valuable: provide K8s-like API capabilities without being tightly coupled to Kubernetes itself.
+
+Kinm takes this further by:
+- **Embracing SQL**: Full PostgreSQL support with efficient query patterns
+- **Database-first design**: All state in the database, no in-memory caching
+- **Independence from K8s**: Compatibility is not a goal (though it happens to work currently)
+- **Modern architecture**: Removing K8s library bloat and version churn
+
+---
+
+## 🎯 Key Features
+
+### 🔄 Kubernetes-like API
+
+- **Complete CRUD Operations** - Create, Read, Update, Delete with K8s semantics
+- **Watch Support** - Real-time change notifications via long-polling and broadcast
+- **Field Selectors** - Efficient filtering using indexed fields
+- **Resource Versioning** - Version chains via `previous_id` for consistency
+
+### 🗄️ Database-Backed Storage
+
+- **PostgreSQL** - Primary production database with advanced SQL features
+- **SQLite** - Development and testing support
+- **No etcd** - Pure SQL design without etcd dependencies
+- **Stateless API Servers** - All state in database enables horizontal scaling
+
+### ⚡ Performance & Scalability
+
+- **Background Compaction** - Automatic cleanup of old resource versions
+- **Efficient Watch** - Long-polling with broadcast notifications
+- **Field Indexing** - Dynamic columns for fast field selector queries
+- **Zero In-Memory State** - Horizontal scaling without sticky sessions
+
+### 🔧 Developer Experience
+
+- **Builder Pattern** - Fluent API for configuring stores (15+ pre-built variants)
+- **Strategy Interfaces** - Clean separation of concerns (Create, Get, List, Update, Delete, Watch)
+- **Embedded SQL** - Parameterized queries in `.sql` files
+- **Testing Support** - SQLite for fast unit tests, PostgreSQL for integration tests
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+```bash
+go version  # 1.25+ required
+# PostgreSQL (production) or SQLite (development)
+```
+
+### Installation
+
+```bash
+go get github.com/obot-platform/kinm
+```
+
+### Basic Usage
+
+See [docs/API.md](docs/API.md) for comprehensive examples and usage patterns.
+
+---
+
+## 📚 Documentation
+
+| Document | Description |
+| ---------- | ------------- |
+| **[API Reference](docs/API.md)** | Complete API documentation with examples |
+| **[Architecture](docs/ARCHITECTURE.md)** | Database schema, data flow, and design decisions |
+| **[CLAUDE.md](CLAUDE.md)** | Development guide for Claude Code AI assistant |
+
+---
+
+## 🏗️ Architecture
+
+Kinm uses a layered architecture:
+
+```
+HTTP Clients
+    ↓
+pkg/server (HTTP Server + k8s GenericAPIServer)
+    ↓
+pkg/stores (Builder + 15+ store variants)
+    ↓
+pkg/strategy (CRUD+Watch adapters)
+    ↓
+pkg/db (Factory + Strategy + SQL statements)
+    ↓
+PostgreSQL / SQLite
+```
+
+**Key architectural decisions:**
+
+- **Database-first**: All state persisted in SQL, no in-memory caching
+- **Version chains**: Resources linked via `previous_id` for Watch support
+- **Background compaction**: Prevents unbounded growth of version history
+- **Long-polling Watch**: Efficient change notifications without WebSockets
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed diagrams and explanations.
+
+---
+
+## 🔧 Development
+
+### Building
+
+```bash
+make build            # Build the project
+go build ./...        # Direct build
+```
+
+### Testing
+
+```bash
+# Unit tests (SQLite - fast)
+make test             # Run all tests with race detector
+make test-short       # Run tests in short mode
+
+# Integration tests (PostgreSQL - comprehensive)
+make test-integration # Requires PostgreSQL (KINM_TEST_DB=postgres)
+
+# Coverage
+make test-coverage    # Generate coverage.html
+```
+
+### Code Quality
+
+```bash
+make lint             # Run golangci-lint
+make validate         # Run all validation (lint + tests)
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow the existing code patterns:
+
+- **Interface-based design** - Use strategy interfaces for extensibility
+- **Builder pattern** - Fluent configuration for stores
+- **Error wrapping** - Use `fmt.Errorf("context: %w", err)` for error chains
+- **SQL-first** - Embrace database capabilities, avoid in-memory caching
+
+See [CLAUDE.md](CLAUDE.md) for detailed development guidelines and patterns.
+
+---
+
+## 📄 License
+
+Apache 2.0 - See [LICENSE](LICENSE) for details
+
+---
+
+## 🔗 Related Projects
+
+Part of the [AI/MCP Multi-Repo Workspace](https://github.com/obot-platform):
+
+- **[nah](https://github.com/obot-platform/nah)** - Kubernetes controller framework (uses kinm concepts)
+- **[obot-entraid](https://github.com/obot-platform/obot-entraid)** - MCP platform with custom auth
+
+---
+
+*Kinm is not Mink. Kinm embraces SQL and modern Go patterns while providing familiar Kubernetes-like API semantics.*
