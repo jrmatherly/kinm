@@ -102,6 +102,17 @@ func (f *Factory) Name() string {
 }
 
 func (f *Factory) Check(req *http.Request) error {
+	// Log connection pool statistics for operational visibility
+	stats := f.SQLDB.Stats()
+	logrus.WithFields(logrus.Fields{
+		"max_open_connections": stats.MaxOpenConnections,
+		"open_connections":     stats.OpenConnections,
+		"in_use":               stats.InUse,
+		"idle":                 stats.Idle,
+		"wait_count":           stats.WaitCount,
+		"wait_duration":        stats.WaitDuration,
+	}).Info("Database connection pool stats")
+
 	err := f.SQLDB.PingContext(req.Context())
 	if err != nil {
 		logrus.Warnf("Failed to ping database: %v", err)
