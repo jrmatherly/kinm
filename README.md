@@ -341,9 +341,48 @@ kubectl delete widget my-widget -n default
 
 ---
 
+## 📡 API Overview
+
+Kinm provides a clean, composable API for building Kubernetes-like resource servers backed by PostgreSQL or SQLite.
+
+### Core Components
+
+**Strategy Interfaces** - Modular CRUD+Watch operations defined in `pkg/strategy/`:
+- `CompleteStrategy` - Full CRUD+Watch implementation
+- Individual interfaces: `Creater`, `Getter`, `Lister`, `Updater`, `Deleter`, `Watcher`
+- Compose strategies to create custom storage backends
+
+**Database Layer** (`pkg/db/`) - PostgreSQL-backed persistence:
+- `Factory` - Database connection and schema management
+- `Strategy` - Implements all strategy interfaces with SQL
+- Supports PostgreSQL (production) and SQLite (development/testing)
+
+**Store Builder** (`pkg/stores/`) - Fluent API for configuring REST storage:
+- 15+ pre-built store variants (complete, readonly, listwatch, etc.)
+- Custom validation and preparation hooks
+- Table conversion for `kubectl get` output
+
+**Server** (`pkg/server/`) - HTTP server with K8s GenericAPIServer:
+- TLS, authentication, and authorization
+- OpenAPI spec generation
+- Middleware support
+
+**Example - Complete CRUD+Watch store:**
+
+```go
+store := stores.NewBuilder(scheme, &MyResource{}).
+    WithCompleteCRUD(dbStrategy).
+    WithValidateCreate(validateFunc).
+    Build()
+```
+
+See **[API Reference](docs/API.md)** for complete interface documentation, usage examples, and advanced patterns.
+
+---
+
 ## 🏗️ Architecture
 
-Kinm uses a layered architecture:
+Kinm uses a layered architecture with PostgreSQL-backed storage:
 
 ```
 HTTP Clients
