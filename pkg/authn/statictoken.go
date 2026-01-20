@@ -1,3 +1,4 @@
+// Package authn provides authentication mechanisms for Kubernetes API server requests.
 package authn
 
 import (
