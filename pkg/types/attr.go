@@ -1,3 +1,4 @@
+// Package types provides common types and utilities for working with Kubernetes objects.
 package types
 
 import (
