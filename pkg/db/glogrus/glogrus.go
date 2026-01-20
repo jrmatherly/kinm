@@ -4,6 +4,7 @@ package glogrus
 import (
 	"context"
 	"errors"
+	"regexp"
 	"sync"
 	"time"
 
@@ -87,7 +88,8 @@ func (l *Logger) Trace(ctx context.Context, begin time.Time, fc func() (string, 
 
 	if l.logSQL {
 		// Add the SQL query to all log levels if the logger is set to Trace.
-		log = log.WithField("sql", sql)
+		// Redact sensitive parameters while preserving SQL structure for debugging.
+		log = log.WithField("sql", redactSQLParams(sql))
 	}
 
 	if err != nil && !(l.ignoreRecordNotFoundError && errors.Is(err, gorm.ErrRecordNotFound)) {
@@ -114,4 +116,17 @@ func (l *Logger) complete() {
 			l.slowThreshold = 500 * time.Millisecond
 		}
 	})
+}
+
+var (
+	// sqlStringLiteralRegex matches single-quoted string literals in SQL queries.
+	// This includes escaped quotes ('') within strings.
+	sqlStringLiteralRegex = regexp.MustCompile(`'(?:[^']|'')*'`)
+)
+
+// redactSQLParams redacts sensitive parameter values from SQL queries while preserving structure.
+// It replaces all single-quoted string literals with '[REDACTED]' to prevent sensitive data
+// exposure in logs while keeping the SQL structure visible for debugging.
+func redactSQLParams(sql string) string {
+	return sqlStringLiteralRegex.ReplaceAllString(sql, "'[REDACTED]'")
 }
