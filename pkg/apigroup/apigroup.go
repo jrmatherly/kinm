@@ -1,3 +1,4 @@
+// Package apigroup provides utilities for creating Kubernetes API group configurations.
 package apigroup
 
 import (
