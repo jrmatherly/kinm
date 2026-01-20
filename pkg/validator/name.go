@@ -1,3 +1,4 @@
+// Package validator provides name validators for Kubernetes-style resources.
 package validator
 
 import (

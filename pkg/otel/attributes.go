@@ -1,3 +1,4 @@
+// Package otel provides utilities for converting Kubernetes types to OpenTelemetry attributes.
 package otel
 
 import (

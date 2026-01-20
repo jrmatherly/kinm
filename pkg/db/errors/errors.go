@@ -1,3 +1,4 @@
+// Package errors provides helper functions for constructing Kubernetes-style API errors.
 package errors
 
 import (

@@ -1,3 +1,4 @@
+// Package remote provides a strategy implementation that delegates operations to a remote Kubernetes cluster.
 package remote
 
 import (

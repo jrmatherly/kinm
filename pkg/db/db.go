@@ -1,10 +1,10 @@
+// Package db provides a database abstraction layer for storing and retrieving Kubernetes-like resources.
 package db
 
 import (
 	"context"
 	"database/sql"
 	_ "embed"
-	"fmt"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -94,7 +94,7 @@ func (d *db) execContext(ctx context.Context, query string, args ...any) (sql.Re
 }
 
 func (d *db) queryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	ctx, span := tracer.Start(ctx, "dbQueryContext", trace.WithAttributes(attribute.String("query", query), attribute.String("args", fmt.Sprint(args...))))
+	ctx, span := tracer.Start(ctx, "dbQueryContext", trace.WithAttributes(attribute.String("query", query), attribute.Int("args_count", len(args))))
 	defer span.End()
 
 	tx, ok := ctx.Value(txKey{}).(*sql.Tx)
@@ -105,7 +105,7 @@ func (d *db) queryContext(ctx context.Context, query string, args ...any) (*sql.
 }
 
 func (d *db) queryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
-	ctx, span := tracer.Start(ctx, "dbQueryRowContext", trace.WithAttributes(attribute.String("query", query), attribute.String("args", fmt.Sprint(args...))))
+	ctx, span := tracer.Start(ctx, "dbQueryRowContext", trace.WithAttributes(attribute.String("query", query), attribute.Int("args_count", len(args))))
 	defer span.End()
 
 	tx, ok := ctx.Value(txKey{}).(*sql.Tx)

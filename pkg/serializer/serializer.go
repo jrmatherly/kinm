@@ -1,3 +1,4 @@
+// Package serializer provides runtime serialization utilities that filter supported media types.
 package serializer
 
 import "k8s.io/apimachinery/pkg/runtime"

@@ -22,11 +22,15 @@ import (
 )
 
 var connections = 5
+var logSQL = false
 
 func init() {
 	x, err := strconv.Atoi(os.Getenv("KINM_DB_CONNECTIONS"))
 	if err == nil {
 		connections = x
+	}
+	if os.Getenv("KINM_LOG_SQL") == "true" {
+		logSQL = true
 	}
 }
 
@@ -65,7 +69,7 @@ func NewFactory(schema *runtime.Scheme, dsn string) (*Factory, error) {
 		Logger: glogrus.New(glogrus.Config{
 			SlowThreshold:             200 * time.Millisecond,
 			IgnoreRecordNotFoundError: true,
-			LogSQL:                    true,
+			LogSQL:                    logSQL,
 		}),
 	})
 	if err != nil {

@@ -1,3 +1,4 @@
+// Package statements provides SQL statement templating and management for database operations.
 package statements
 
 import (
