@@ -62,14 +62,55 @@ Kinm takes this further by:
 ### Prerequisites
 
 ```bash
-go version  # 1.25+ required
-# PostgreSQL (production) or SQLite (development)
+# Check requirements
+go version       # 1.25+ required
+git --version
+make --version   # Optional, for development tasks
+
+# Database (choose one or both)
+# PostgreSQL 12+ (recommended for production)
+psql --version
+
+# SQLite 3.35+ (built-in for development/testing)
+sqlite3 --version
 ```
+
+**Minimum Requirements:**
+- **Go:** 1.25 or later (for Go modules and generics support)
+- **Database:** PostgreSQL 12+ (production) or SQLite 3.35+ (development)
+- **Git:** Any recent version (for dependency resolution)
+- **Make:** Optional, for running development tasks (`make build`, `make test`, etc.)
+
+**Optional Tools:**
+- **golangci-lint:** For code quality checks (`make lint`)
+- **Docker/Podman:** For running PostgreSQL in containers
+- **psql:** PostgreSQL client for database management
 
 ### Installation
 
+**As a Library Dependency:**
+
 ```bash
+# Add to your Go project
 go get github.com/obot-platform/kinm
+
+# Or add to go.mod
+require github.com/obot-platform/kinm v0.0.0
+```
+
+**For Development:**
+
+```bash
+# Clone the repository
+git clone https://github.com/obot-platform/kinm.git
+cd kinm
+
+# Install dependencies and build
+go mod download
+make build
+
+# Run tests
+make test
 ```
 
 ### Basic Usage
