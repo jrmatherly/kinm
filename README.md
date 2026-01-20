@@ -5,7 +5,7 @@
 
 **A Kubernetes-like API server backed by PostgreSQL/SQLite**
 
-> 📖 **Documentation:** [API Reference](docs/API.md) • [Architecture](docs/ARCHITECTURE.md)
+> 📖 **Quick Links:** [API Reference](docs/API.md) • [Architecture](docs/ARCHITECTURE.md) • [Project Index](../documentation/docs/reference/project-index.md) • [Security](SECURITY.md)
 
 ---
 
@@ -333,11 +333,25 @@ kubectl delete widget my-widget -n default
 
 ## 📚 Documentation
 
+### 📖 Project Documentation
+
 | Document | Description |
 | ---------- | ------------- |
 | **[API Reference](docs/API.md)** | Complete API documentation with examples |
 | **[Architecture](docs/ARCHITECTURE.md)** | Database schema, data flow, and design decisions |
 | **[CLAUDE.md](CLAUDE.md)** | Development guide for Claude Code AI assistant |
+| **[Security Policy](SECURITY.md)** | Vulnerability reporting and security best practices |
+
+### 🌐 Workspace Documentation
+
+kinm is part of the [AI/MCP Multi-Repo Workspace](../README.md). For workspace-level documentation:
+
+| Document | Description |
+| ---------- | ------------- |
+| **[Project Index](../documentation/docs/reference/project-index.md)** | Comprehensive reference for all workspace projects |
+| **[Documentation Guide](../documentation/docs/reference/documentation-guide.md)** | Navigation and learning paths |
+| **[Architecture Overview](../documentation/docs/reference/architecture.md)** | Visual architecture diagrams for all projects |
+| **[AGENTS.md](../AGENTS.md)** | Universal guidelines for AI assistants |
 
 ---
 
@@ -443,14 +457,40 @@ make validate         # Run all validation (lint + tests)
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please follow the existing code patterns:
+Contributions are welcome! We follow standard open-source practices.
+
+### Code Style & Patterns
 
 - **Interface-based design** - Use strategy interfaces for extensibility
 - **Builder pattern** - Fluent configuration for stores
 - **Error wrapping** - Use `fmt.Errorf("context: %w", err)` for error chains
 - **SQL-first** - Embrace database capabilities, avoid in-memory caching
+- **Table-driven tests** - Use subtests with t.Run() for comprehensive test coverage
+- **Conventional commits** - Follow [Conventional Commits](https://www.conventionalcommits.org/) format
 
-See [CLAUDE.md](CLAUDE.md) for detailed development guidelines and patterns.
+### Development Workflow
+
+1. **Fork and clone** - Fork the repository and clone your fork
+2. **Create a branch** - Use descriptive branch names (`feature/my-feature`, `fix/issue-123`)
+3. **Write tests** - Add or update tests for your changes
+4. **Run validation** - `make validate` (runs lint + tests)
+5. **Commit changes** - Use conventional commit messages
+6. **Push and PR** - Push to your fork and open a pull request
+
+### Resources
+
+- **[CLAUDE.md](CLAUDE.md)** - Detailed development guidelines and patterns
+- **[AGENTS.md](../AGENTS.md)** - Universal workspace guidelines for AI assistants
+- **[Code of Conduct](../CODE_OF_CONDUCT.md)** - Community standards
+- **[Security Policy](SECURITY.md)** - Reporting vulnerabilities
+
+### Getting Help
+
+- **GitHub Issues** - Bug reports and feature requests
+- **GitHub Discussions** - Questions and community support
+- **Pull Requests** - Code contributions
+
+We appreciate all contributions, from bug reports to documentation improvements to new features!
 
 ---
 
