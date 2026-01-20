@@ -1,3 +1,4 @@
+// Package db provides a database abstraction layer for storing and retrieving Kubernetes-like resources.
 package db
 
 import (
