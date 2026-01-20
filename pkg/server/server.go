@@ -58,6 +58,14 @@ type Config struct {
 	AuditConfig           *options.AuditOptions
 	IgnoreStartFailure    bool
 	ReadinessCheckers     []healthz.HealthChecker
+	// MaxRequestsInFlight is the maximum number of non-mutating requests in flight at a given time.
+	// When this limit is exceeded, the server will reject requests. A value of 0 uses the
+	// k8s.io/apiserver default of 400.
+	MaxRequestsInFlight int
+	// MaxMutatingRequestsInFlight is the maximum number of mutating requests in flight at a given time.
+	// When this limit is exceeded, the server will reject requests. A value of 0 uses the
+	// k8s.io/apiserver default of 200.
+	MaxMutatingRequestsInFlight int
 }
 
 func (c *Config) complete() {
@@ -148,6 +156,14 @@ func New(config *Config) (*Server, error) {
 	}
 	if config.Authorization != nil {
 		serverConfig.Authorization.Authorizer = config.Authorization
+	}
+
+	// Apply rate limiting configuration if specified
+	if config.MaxRequestsInFlight > 0 {
+		serverConfig.Config.MaxRequestsInFlight = config.MaxRequestsInFlight
+	}
+	if config.MaxMutatingRequestsInFlight > 0 {
+		serverConfig.Config.MaxMutatingRequestsInFlight = config.MaxMutatingRequestsInFlight
 	}
 
 	if config.PostStartFunc != nil {

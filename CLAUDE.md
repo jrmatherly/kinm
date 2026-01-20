@@ -288,6 +288,52 @@ For session initialization with full context, run `/expert-mode` from the worksp
 3. Add method to `Strategy` struct
 4. Write tests for both SQLite and PostgreSQL
 
+### Configuring Rate Limiting
+
+Rate limiting protects the database-backed API server from request flooding and resource exhaustion.
+
+**Configuration Fields** (in `server.Config`):
+
+```go
+config := &server.Config{
+    MaxRequestsInFlight:         600,  // Read-only requests (default: 400)
+    MaxMutatingRequestsInFlight: 300,  // Write requests (default: 200)
+    // ... other config
+}
+```
+
+**Behavior:**
+
+- `MaxRequestsInFlight`: Maximum concurrent non-mutating (GET, LIST, WATCH) requests
+- `MaxMutatingRequestsInFlight`: Maximum concurrent mutating (CREATE, UPDATE, DELETE) requests
+- Value of `0`: Uses k8s.io/apiserver defaults (400 for read, 200 for write)
+- When limits exceeded: Server returns HTTP 429 (Too Many Requests)
+
+**When to Adjust:**
+
+- **Increase limits**: High-traffic environments, multiple clients, sufficient database capacity
+- **Decrease limits**: Resource-constrained environments, database connection pool limits
+- **Database consideration**: Each request generates SQL queries; ensure connection pool can handle concurrent load
+
+**Example for high-traffic production:**
+
+```go
+config := &server.Config{
+    MaxRequestsInFlight:         1000,  // Higher read capacity
+    MaxMutatingRequestsInFlight: 400,   // Higher write capacity
+    // Ensure database connection pool >= MaxMutatingRequestsInFlight
+}
+```
+
+**Example for resource-constrained environments:**
+
+```go
+config := &server.Config{
+    MaxRequestsInFlight:         200,  // Lower read limit
+    MaxMutatingRequestsInFlight: 50,   // Lower write limit
+}
+```
+
 ### Debugging Watch Issues
 
 1. Check `previous_id` chain integrity
