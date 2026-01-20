@@ -1,3 +1,4 @@
+// Package server provides a Kubernetes-like API server that wraps k8s.io/apiserver.
 package server
 
 import (
