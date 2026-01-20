@@ -1,3 +1,4 @@
+// Package translation provides a strategy wrapper that translates objects between public and internal representations.
 package translation
 
 import (
