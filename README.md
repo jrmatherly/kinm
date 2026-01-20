@@ -115,7 +115,219 @@ make test
 
 ### Basic Usage
 
-See [docs/API.md](docs/API.md) for comprehensive examples and usage patterns.
+Here's a complete example showing how to create a Kubernetes-like API server with CRUD operations:
+
+#### 1. Define Your Resource Type
+
+```go
+package main
+
+import (
+    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    "k8s.io/apimachinery/pkg/runtime"
+    "k8s.io/apimachinery/pkg/runtime/schema"
+)
+
+// Widget is a simple custom resource
+type Widget struct {
+    metav1.TypeMeta   `json:",inline"`
+    metav1.ObjectMeta `json:"metadata,omitempty"`
+
+    Spec   WidgetSpec   `json:"spec,omitempty"`
+    Status WidgetStatus `json:"status,omitempty"`
+}
+
+type WidgetSpec struct {
+    Color string `json:"color,omitempty"`
+    Size  int    `json:"size,omitempty"`
+}
+
+type WidgetStatus struct {
+    Phase string `json:"phase,omitempty"`
+}
+
+// WidgetList contains a list of Widgets
+type WidgetList struct {
+    metav1.TypeMeta `json:",inline"`
+    metav1.ListMeta `json:"metadata,omitempty"`
+    Items           []Widget `json:"items"`
+}
+
+// Required methods for runtime.Object
+func (w *Widget) DeepCopyObject() runtime.Object {
+    // Implementation omitted for brevity
+    return w
+}
+
+func (wl *WidgetList) DeepCopyObject() runtime.Object {
+    // Implementation omitted for brevity
+    return wl
+}
+```
+
+#### 2. Set Up the Server
+
+```go
+package main
+
+import (
+    "context"
+    "log"
+
+    "github.com/obot-platform/kinm/pkg/apigroup"
+    "github.com/obot-platform/kinm/pkg/db"
+    "github.com/obot-platform/kinm/pkg/server"
+    "github.com/obot-platform/kinm/pkg/stores"
+    "k8s.io/apimachinery/pkg/runtime"
+    "k8s.io/apimachinery/pkg/runtime/schema"
+    "k8s.io/apiserver/pkg/registry/rest"
+)
+
+func main() {
+    ctx := context.Background()
+
+    // 1. Create scheme and register types
+    scheme := runtime.NewScheme()
+    gvk := schema.GroupVersionKind{
+        Group:   "example.com",
+        Version: "v1",
+        Kind:    "Widget",
+    }
+    scheme.AddKnownTypes(gvk.GroupVersion(), &Widget{}, &WidgetList{})
+
+    // 2. Create database factory (SQLite for development)
+    factory, err := db.NewFactory(scheme, "sqlite://widgets.db")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // 3. Create storage strategy for Widgets
+    strategy, err := factory.NewDBStrategy(ctx, gvk, "widgets")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer strategy.Destroy()
+
+    // 4. Build REST storage with complete CRUD+Watch capabilities
+    store := stores.NewBuilder(scheme, &Widget{}).
+        WithCompleteCRUD(strategy).
+        Build()
+
+    // 5. Create API group with the store
+    apiGroup := apigroup.ForStores(scheme, map[string]rest.Storage{
+        "widgets": store,
+    })
+
+    // 6. Configure and start server
+    srv, err := server.New(&server.Config{
+        Name:           "widget-api",
+        Version:        "v1",
+        Scheme:         scheme,
+        APIGroups:      []*server.APIGroupInfo{apiGroup},
+        HTTPListenPort: 8080,
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    log.Println("Widget API server running on :8080")
+    if err := srv.Run(ctx); err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
+#### 3. Perform CRUD Operations
+
+Once the server is running, interact with it using kubectl or HTTP clients:
+
+**Create a Widget:**
+
+```bash
+# Using curl
+curl -X POST http://localhost:8080/apis/example.com/v1/namespaces/default/widgets \
+  -H "Content-Type: application/json" \
+  -d '{
+    "apiVersion": "example.com/v1",
+    "kind": "Widget",
+    "metadata": {
+      "name": "my-widget",
+      "namespace": "default"
+    },
+    "spec": {
+      "color": "blue",
+      "size": 42
+    }
+  }'
+```
+
+**Get a Widget:**
+
+```bash
+curl http://localhost:8080/apis/example.com/v1/namespaces/default/widgets/my-widget
+```
+
+**List All Widgets:**
+
+```bash
+curl http://localhost:8080/apis/example.com/v1/namespaces/default/widgets
+```
+
+**Update a Widget:**
+
+```bash
+curl -X PUT http://localhost:8080/apis/example.com/v1/namespaces/default/widgets/my-widget \
+  -H "Content-Type: application/json" \
+  -d '{
+    "apiVersion": "example.com/v1",
+    "kind": "Widget",
+    "metadata": {
+      "name": "my-widget",
+      "namespace": "default",
+      "resourceVersion": "1"
+    },
+    "spec": {
+      "color": "red",
+      "size": 100
+    }
+  }'
+```
+
+**Delete a Widget:**
+
+```bash
+curl -X DELETE http://localhost:8080/apis/example.com/v1/namespaces/default/widgets/my-widget
+```
+
+**Watch for Changes:**
+
+```bash
+# Long-polling watch stream
+curl http://localhost:8080/apis/example.com/v1/namespaces/default/widgets?watch=true
+```
+
+#### 4. Using with kubectl (Optional)
+
+Kinm servers are compatible with kubectl (though compatibility is not a design goal):
+
+```bash
+# Configure kubectl
+kubectl config set-cluster widget-api --server=http://localhost:8080
+kubectl config set-context widget-api --cluster=widget-api
+kubectl config use-context widget-api
+
+# Use kubectl commands
+kubectl get widgets -n default
+kubectl describe widget my-widget -n default
+kubectl delete widget my-widget -n default
+```
+
+**Next Steps:**
+
+- See [docs/API.md](docs/API.md) for comprehensive API documentation
+- Explore builder patterns in [docs/API.md#store-builder](docs/API.md#store-builder)
+- Learn about field selectors, validation hooks, and custom table conversion
+- Review [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for database schema and design decisions
 
 ---
 
