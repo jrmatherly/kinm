@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"testing"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/storage"
 )
 
@@ -610,4 +612,45 @@ func TestUIDMatch(t *testing.T) {
 	assert.Equal(t, `StorageError: invalid object, Code: 4, Key: test, ResourceVersion: 0, AdditionalErrorMsg: Precondition failed: UID in precondition: , UID in object meta: uid`, err.Error())
 	_, ok := err.(*storage.StorageError)
 	assert.True(t, ok)
+}
+
+func TestFactoryCheck(t *testing.T) {
+	// Create a test scheme
+	scheme := runtime.NewScheme()
+
+	// Determine DSN based on test database type (matches newSQLDB logic)
+	var dsn string
+	if os.Getenv("KINM_TEST_DB") == "postgres" {
+		dsn = fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable",
+			user, password, host, port, dbname)
+	} else {
+		dsn = "sqlite://otto.db"
+	}
+
+	// Create a Factory instance
+	factory, err := NewFactory(scheme, dsn)
+	require.NoError(t, err)
+	require.NotNil(t, factory)
+	t.Cleanup(func() {
+		if factory.SQLDB != nil {
+			_ = factory.SQLDB.Close()
+		}
+	})
+
+	// Create a test HTTP request with context
+	req, err := http.NewRequest("GET", "/healthz", nil)
+	require.NoError(t, err)
+
+	// Call Check() and verify it returns nil (healthy database)
+	err = factory.Check(req)
+	assert.NoError(t, err)
+
+	// Verify the database connection is working
+	err = factory.SQLDB.Ping()
+	assert.NoError(t, err)
+
+	// Verify stats can be retrieved
+	stats := factory.SQLDB.Stats()
+	assert.GreaterOrEqual(t, stats.MaxOpenConnections, 0)
+	assert.GreaterOrEqual(t, stats.OpenConnections, 0)
 }
