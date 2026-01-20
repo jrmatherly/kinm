@@ -481,7 +481,6 @@ Contributions are welcome! We follow standard open-source practices.
 
 - **[CLAUDE.md](CLAUDE.md)** - Detailed development guidelines and patterns
 - **[AGENTS.md](../AGENTS.md)** - Universal workspace guidelines for AI assistants
-- **[Code of Conduct](../CODE_OF_CONDUCT.md)** - Community standards
 - **[Security Policy](SECURITY.md)** - Reporting vulnerabilities
 
 ### Getting Help
