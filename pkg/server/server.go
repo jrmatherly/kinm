@@ -158,6 +158,14 @@ func New(config *Config) (*Server, error) {
 		serverConfig.Authorization.Authorizer = config.Authorization
 	}
 
+	// Apply rate limiting configuration if specified
+	if config.MaxRequestsInFlight > 0 {
+		serverConfig.Config.MaxRequestsInFlight = config.MaxRequestsInFlight
+	}
+	if config.MaxMutatingRequestsInFlight > 0 {
+		serverConfig.Config.MaxMutatingRequestsInFlight = config.MaxMutatingRequestsInFlight
+	}
+
 	if config.PostStartFunc != nil {
 		serverConfig.AddPostStartHookOrDie(config.Name, func(context server.PostStartHookContext) error {
 			err := config.PostStartFunc(context)
