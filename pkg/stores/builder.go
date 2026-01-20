@@ -1,3 +1,4 @@
+// Package stores provides REST storage builders and implementations for Kubernetes API resources.
 package stores
 
 import (
