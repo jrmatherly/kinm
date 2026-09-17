@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/glebarez/sqlite v1.11.0
-	github.com/jackc/pgx/v5 v5.8.0
+	github.com/jackc/pgx/v5 v5.9.2
 	github.com/lib/pq v1.10.9
 	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.11.1
